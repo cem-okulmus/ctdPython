@@ -30,7 +30,7 @@ def bag_to_blocks(h,B):
     blocks = list()
     for C in h.separate(B, only_vertices=True):
         blocks.append(Block(VertSet(B),VertSet(C)))
-    blocks.append(Block(VertSet(B),VertSet({})))  # adding trivial block too
+    blocks.append(Block(VertSet(B),VertSet(set())))  # adding trivial block too
     return blocks
 
 # Same as  computeosftK, but returns directly the blocks
@@ -49,15 +49,15 @@ h = HyperGraph.fromHyperbench("/home/okulmus/Documents/OldBenchmarks/benchmark/h
 
 ctd = CTDCheck(h)
 
-blocks = computesoftkBlocks(h,3)
+blocks = computesoftkBlocks(h,1)
 
 for b in blocks:
     print("Adding blocks ", b)
     ctd.addBlock(b)
-    headedBy = ctd.head_to_blocks[b.head]
-    print("All blocks headed by ",b.head )
-    for h in headedBy:
-        print(h)
+    # headedBy = ctd.head_to_blocks[repr(b.head)]
+    # print("All blocks headed by ",b.head )
+    # for h in headedBy:
+        # print(h)
 
 
 print("Done adding blocks")

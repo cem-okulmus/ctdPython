@@ -1,5 +1,6 @@
 class VertSet(object):
     def __init__(self,vertices):
+        assert(type(vertices) == set)
         self.vertices = vertices
          
     def __hash__(self):
@@ -8,13 +9,17 @@ class VertSet(object):
             finalHash = finalHash + int(h)
         return finalHash   
         
-    def __repr__(self):
+    def __repr__(self):        
         return str(self.vertices)
+
+    def __eq__(self, other):
+        return type(other) == VertSet and self.vertices == other.vertices
 
 class Block(object):
     def __init__(self,head,tail):
         assert(type(head) == VertSet)
         assert(type(tail) == VertSet)
+        assert(len(head.vertices.intersection(tail.vertices)) == 0) # disjoint
         self.head = head
         self.tail = tail
 
@@ -25,11 +30,19 @@ class Block(object):
         for t in self.tail.vertices:
             finalHash = finalHash + int(t)
         return finalHash
+
+    def __eq__(self, other):
+        return type(other) == Block and self.head == other.head and self.tail == other.tail
             
     def __repr__(self):
         return "("+str(self.head)+","+str(self.tail)+")"
 
 
+    def __lt__(self,other):
+        selfVert = self.head.vertices.union(self.tail.vertices) 
+        otherVert = other.head.vertices.union(other.tail.vertices) 
+
+        return selfVert.issubset(otherVert) and self.tail.vertices.issubset(other.tail.vertices)
 
 
 class CTDCheck(object):
@@ -44,15 +57,15 @@ class CTDCheck(object):
         if b in self.blocks:
             return # don't add same block twice
         self.blocks.add(b)
-        print("Is the head ", b.head ," hash:",hash(b.head)  ," already in the map ", list(self.head_to_blocks.keys()))
-        print("Answer: ", b.head in list(self.head_to_blocks.keys()))
+        # print("Is the head ", b.head ," hash:",hash(b.head)  ," already in the map ", list(self.head_to_blocks.keys()))
+        # print("Answer: ", b.head in list(self.head_to_blocks.keys()))
         if b.head in self.head_to_blocks:
             self.head_to_blocks[b.head].append(b)
         else:
             self.head_to_blocks[b.head] = [b]            
         
         if len(b.tail.vertices) == 0: 
-            print("Block ",b," added as trivially sat.")
+            # print("Block ",b," added as trivially sat.")
             self.satisfied_block.add(b)  # check if trivially satisifed
         # else:
         #     self.block_dict[b] = self.hasBasis(b) # basis check
@@ -63,7 +76,9 @@ class CTDCheck(object):
     def hasBasis(self,b):
         basisFound = False
         for B in self.head_to_blocks:
-            blocks = self.head_to_blocks[B]
+            allBlocks = self.head_to_blocks[B]
+            blocks = [x for x in allBlocks if x < b]
+
             cond3 = True
             for ob in blocks:
                 if not ob in self.satisfied_block:
