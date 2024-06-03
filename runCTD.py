@@ -33,6 +33,18 @@ def bag_to_blocks(h,B):
     blocks.append(Block(VertSet(B),VertSet(set())))  # adding trivial block too
     return blocks
 
+
+# computes the blocks of a bag by computing its components w.r.t. h
+def bag_to_blocksConnected(h,B):  
+    blocks = list()
+    for C in h.separate(B, only_vertices=True):
+        tempBlock = Block(VertSet(B),VertSet(C))
+        if tempBlock.connected(h):
+            blocks.append(tempBlock)
+    blocks.append(Block(VertSet(B),VertSet(set())))  # adding trivial block too
+    return blocks
+
+
 # Same as  computeosftK, but returns directly the blocks
 def computesoftkBlocks(h, k):
     out = list()
@@ -43,13 +55,22 @@ def computesoftkBlocks(h, k):
     return out
 
 
+# Same as  computeosftK, but returns directly the blocks
+def computesoftkBlocksConnected(h, k):
+    out = list()
+    listOfLists = map(partial(bag_to_blocksConnected,h),computesoftk(h,k))
+    for ll in listOfLists:
+        for l in ll:
+            out.append(l)
+    return out
+
 
 
 h = HyperGraph.fromHyperbench("/home/okulmus/Documents/OldBenchmarks/benchmark/hyperbench/1.dtl")
 
 ctd = CTDCheck(h)
 
-blocks = computesoftkBlocks(h,1)
+blocks = computesoftkBlocksConnected(h,2)
 
 for b in blocks:
     print("Adding blocks ", b)

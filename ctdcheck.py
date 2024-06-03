@@ -44,6 +44,14 @@ class Block(object):
 
         return selfVert.issubset(otherVert) and self.tail.vertices.issubset(other.tail.vertices)
 
+    # connected bags filters out any bags for which the induced subgraph over E is not connected
+    def connected(self,H):
+        induced = H.vertex_induced_subg(self.head.vertices)
+        comps = induced.separate(set())
+        return len(comps) == 1 # connected if only one connected comp
+
+
+
 
 class CTDCheck(object):
     def __init__(self,h):
