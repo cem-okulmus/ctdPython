@@ -4,6 +4,7 @@ from hypergraph import HyperGraph
 from functools import partial
 from ctdcheck import Block
 from ctdcheck import VertSet
+import functools
 import sys
 
 
@@ -13,36 +14,51 @@ def all_choose_k(S, k):
 #
 def all_lambdas(E, k):
     for es in all_choose_k(E, k):
-        yield set.union(*es)
+        # yield set.union(*es)
+        yield es
 
 # (over approximates) the bags produced by the LogK algorithm
 def computesoftk(h, k):
     softk = list()
     for P in all_lambdas(h.E,k):
-        for C in h.separate(P, only_vertices=True):
+        obj1 = set()
+        if len(P) == 1:
+            obj1 = P[0].V
+        elif len(P) > 1:
+            obj1 =functools.reduce(lambda a,b: (a).union(b),map(lambda s : s.V,P))
+        for C in h.separate(obj1, only_vertices=True):
             for L in all_lambdas(h.E, k):
-                B = set.intersection(C, L)
+                obj2 = set()
+                if len(L) == 1:
+                    obj2 = L[0].V
+                elif len(L) > 1:
+                    obj2 = functools.reduce(lambda a,b: (a).union(b),map(lambda s : s.V,L))
+                B = set.intersection(C, obj2)
                 if len(B) > 1 and B not in softk:
-                    softk.append(B)
+                    softk.append((B,L))
     return softk
     
 # computes the blocks of a bag by computing its components w.r.t. h
-def bag_to_blocks(h,B):  
+def bag_to_blocks(h,pair):
+    B = pair[0]
+    L = pair[1]  
     blocks = list()
     for C in h.separate(B, only_vertices=True):
         blocks.append(Block(VertSet(B),VertSet(C)))
-    blocks.append(Block(VertSet(B),VertSet(set())))  # adding trivial block too
+    blocks.append(Block(VertSet(B),L,VertSet(set())))  # adding trivial block too
     return blocks
 
 
 # computes the blocks of a bag by computing its components w.r.t. h
-def bag_to_blocksConnected(h,B):  
+def bag_to_blocksConnected(h,pair):
+    B = pair[0]
+    L = pair[1]  
     blocks = list()
     for C in h.separate(B, only_vertices=True):
-        tempBlock = Block(VertSet(B),VertSet(C))
+        tempBlock = Block(VertSet(B),L,VertSet(C))
         if tempBlock.connected(h):
             blocks.append(tempBlock)
-    tmp = Block(VertSet(B),VertSet(set()))
+    tmp = Block(VertSet(B),L,VertSet(set()))
     if tmp.connected(h):
         blocks.append(tmp)  # adding trivial block too
     return blocks
@@ -73,7 +89,16 @@ def computesoftkBlocksConnected(h, k):
 h = HyperGraph.fromHyperbench(sys.argv[1])
 
 
-
+# print("all Lambdas for k 2 ")
+# for sep in all_lambdas(h.E,3):
+#     print(sep)
+#     obj1 = set()
+#     if len(sep) == 1:
+#         obj1 = sep[0].V
+#     elif len(sep) > 1:
+#         print("Type sep ", type(sep), sep )
+#         obj1 = functools.reduce(lambda a,b: (a).union(b),map(lambda s : s.V,sep))
+#     print("sep ", sep, " of type ", type(sep) ," has vertex set ", obj1, " type ", type(obj1))
 
 ctd = CTDCheck(h)
 
@@ -81,7 +106,7 @@ ctd = CTDCheck(h)
 blocks = computesoftkBlocksConnected(h,int(sys.argv[2]))
 
 for b in blocks:
-    print("Adding blocks ", b)
+    # print("Adding blocks ", b)
     ctd.addBlock(b)
     # headedBy = ctd.head_to_blocks[repr(b.head)]
     # print("All blocks headed by ",b.head )

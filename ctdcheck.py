@@ -6,7 +6,7 @@ class VertSet(object):
     def __hash__(self):
         finalHash = 0 
         for h in self.vertices:
-            finalHash = finalHash + int(h)
+            finalHash = finalHash + hash(h)
         return finalHash   
         
     def __repr__(self):        
@@ -16,19 +16,20 @@ class VertSet(object):
         return type(other) == VertSet and self.vertices == other.vertices
 
 class Block(object):
-    def __init__(self,head,tail):
+    def __init__(self,head,cover,tail):
         assert(type(head) == VertSet)
         assert(type(tail) == VertSet)
         assert(len(head.vertices.intersection(tail.vertices)) == 0) # disjoint
         self.head = head
+        self.cover = cover
         self.tail = tail
 
     def __hash__(self):
         finalHash = 0 
         for h in self.head.vertices:
-            finalHash = finalHash + int(h)
+            finalHash = finalHash + hash(h)
         for t in self.tail.vertices:
-            finalHash = finalHash + int(t)
+            finalHash = finalHash + hash(t)
         return finalHash
 
     def __eq__(self, other):
@@ -88,12 +89,14 @@ class CTDCheck(object):
         self.head_to_blocks = dict() # mapping heads to blocks headed by them
         self.block_to_basis = dict() # mapping a satisfied block to its basis
         self.rootHead = None # cache the root head once found
+        self.head_to_cover = dict() # cache the edge covers
 
     def addBlock(self,b):
         assert(type(b) == Block)
         if b in self.blocks:
             return # don't add same block twice
         self.blocks.add(b)
+        self.head_to_cover[b.head] = b.cover
         # print("Is the head ", b.head ," hash:",hash(b.head)  ," already in the map ", list(self.head_to_blocks.keys()))
         # print("Answer: ", b.head in list(self.head_to_blocks.keys()))
         if b.head in self.head_to_blocks:
@@ -134,20 +137,19 @@ class CTDCheck(object):
                 continue # 1st Condition violated
             cond2 = True
             for e in self.H.E:
-                if len(e.intersection(b.tail.vertices)) == 0:
+                if len(e.V.intersection(b.tail.vertices)) == 0:
                     continue # find other edge
-                if not e.issubset(unionTails):
+                if not e.V.issubset(unionTails):
                     cond2 = False
                     break
             if cond2 == False:
                 continue # 2nd Condition vioalted
             basisFound = True
             basisWitness = B
-            print("The basis of ", b , " is ", B)
-
-            print("The blocks headed by ", B)
-            for BB in blocks:
-                print(str(BB)+"\n")
+            # print("The basis of ", b , " is ", B)
+            # print("The blocks headed by ", B)
+            # for BB in blocks:
+            #     print(str(BB)+"\n")
 
             break
         if basisFound == True:
@@ -165,7 +167,7 @@ class CTDCheck(object):
                 if not b in self.satisfied_block:
                     allSatisfied = False
             if allSatisfied == True:
-                print("Root Head is ",head)
+                # print("Root Head is ",head)
                 self.rootHead = head
                 return True
         return False
@@ -180,12 +182,12 @@ class CTDCheck(object):
                 res = self.hasBasis(b)
                 if res == True:
                     changed = True
-                    print("Found basis for the block ", b)
+                    # print("Found basis for the block ", b)
                 if self.rootHeadFound():
-                    print("Found decomp!")
+                    # print("Found decomp!")
                     return True
             if changed == False:
-                print("Nothing has changed anymore, terminating")
+                # print("Nothing has changed anymore, terminating")
                 return False
 
     def getDecomp(self,block):
@@ -194,7 +196,7 @@ class CTDCheck(object):
             return None  # Nothing to return if block not satisfied
         if len(block.tail.vertices) == 0:
             # print(block, " is trivial")
-            return Node(block.head,None,list()) # leaf node
+            return Node(block.head,self.head_to_cover[block.head],list()) # leaf node
         basis = self.block_to_basis[block]
         allBlocks = self.head_to_blocks[basis]
         blocks = [x for x in allBlocks if x < block]
@@ -206,8 +208,8 @@ class CTDCheck(object):
         children = list()
         for bs in blocks: 
             children.append(self.getDecomp(bs))
-        print
-        return Node(basis,None,children)
+        
+        return Node(basis,self.head_to_cover[basis],children)
 
 
     def getDecompRoot(self):
@@ -230,4 +232,4 @@ class CTDCheck(object):
         for bs in blocks:
             children.append(self.getDecomp(bs))
 
-        return Node(self.rootHead,None,children)
+        return Node(self.rootHead,self.head_to_cover[self.rootHead],children)

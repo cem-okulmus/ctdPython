@@ -7,6 +7,18 @@ from termcolor import colored
 colorama.init()
 
 
+class Edge(object):
+    def __init__(self,V,name):
+        assert(type(name) == str)
+        assert(type(V) == set)
+        self.V = V
+        self.name = name
+
+
+    def __repr__(self):
+        return self.name + "(" + ",".join(map(str,self.V)) + ")"
+
+
 class HyperGraph(object):
     def __init__(self):
         self.V = set()
@@ -37,7 +49,7 @@ class HyperGraph(object):
     def copy(self):
         h = HyperGraph()
         for en, e in self.edge_dict.items():
-            h.add_edge(e, name=en)
+            h.add_edge(e.V, name=en)
         return h
 
     def join_copy(self, x, y):
@@ -46,7 +58,7 @@ class HyperGraph(object):
             raise ValueError('Join vertices need to be in hypergraph')
         h = HyperGraph()
         for en, e in self.edge_dict.items():
-            e2 = e.copy()
+            e2 = e.V.copy()
             if y in e2:
                 e2.remove(y)
                 e2.add(x)
@@ -56,14 +68,14 @@ class HyperGraph(object):
     def toHyperbench(self):
         s = []
         for en, e in sorted(self.edge_dict.items()):
-            s.append('{}({}),'.format(en, ','.join(e)))
+            s.append('{}({}),'.format(en, ','.join(e.V)))
         return '\n'.join(s)
 
     def vertex_induced_subg(self, U):
         """Induced by vertex set U"""
         h = HyperGraph()
         for en, e in self.edge_dict.items():
-            e2 = e.copy()
+            e2 = e.V.copy()
             e2 = e2 & U
             if e2 != set():
                 h.add_edge(e2, name=en)
@@ -71,13 +83,13 @@ class HyperGraph(object):
 
     def bridge_subg(self, U):
         EC = [en for en, e in self.edge_dict.items() if
-              (e & U) != set()]
+              (e.V & U) != set()]
         C = self.edge_subg(EC)
 
         # for each component C_i of rest, compute a special edge Sp_i
         for C_i in self.separate(U):
             print(C_i)
-            Sp_i_parts = [(e - U) for e in C.E if (e & C_i.V) != set()]
+            Sp_i_parts = [(e.V - U) for e in C.E if (e.V & C_i.V) != set()]
             Sp_i = set.union(*Sp_i_parts)
             C.add_special_edge(Sp_i)
         return C
@@ -120,9 +132,10 @@ class HyperGraph(object):
 
     def add_edge(self, edge, name):
         assert(type(edge) == set)
-        self.edge_dict[name] = edge
+        obj = Edge(edge,name)
+        self.edge_dict[name] = obj
         self.V.update(edge)
-        self.E.append(edge)
+        self.E.append(obj)
 
     def add_special_edge(self, sp):
         SPECIAL_NAME = 'Special'
@@ -144,7 +157,7 @@ class HyperGraph(object):
         G = nx.Graph()
         G.add_nodes_from(self.V)
         for i, e in enumerate(self.E):
-            for a, b in itertools.combinations(e, 2):
+            for a, b in itertools.combinations(e.V, 2):
                 G.add_edge(a, b)
         return G
 
@@ -155,7 +168,7 @@ class HyperGraph(object):
         for n, e in self.edge_dict.items():
             if n in without:
                 continue
-            for v in e:
+            for v in e.V:
                 G.add_edge(n, v)
         return G
 
@@ -165,7 +178,7 @@ class HyperGraph(object):
         buf.append('p htd {} {}'.format(len(self.V),
                                         len(self.E)))
         for i, ei in enumerate(sorted(self.edge_dict.items()), start=1):
-            en, e = ei
+            en, e = ei.V
             edgestr = ' '.join(map(lambda v: vertex2int[v], e))
             line = '{} {}'.format(i, edgestr)
             buf.append(line)
@@ -183,8 +196,8 @@ class HyperGraph(object):
         C = HyperGraph()
         cover = U | sep
         for en, e in self.edge_dict.items():
-            if e.issubset(cover) and not e.issubset(sep):
-                C.add_edge(e, en)
+            if e.V.issubset(cover) and not e.V.issubset(sep):
+                C.add_edge(e.V, en)
         return C
 
     def separate(self, sep, only_vertices=False):
@@ -201,7 +214,7 @@ class HyperGraph(object):
 
     def toVisualSC(self):
         vertex2int = {v: str(i) for i, v in enumerate(self.V, start=1)}
-        edges = map(lambda e: map(lambda v: vertex2int[v], e), self.E)
+        edges = map(lambda e: map(lambda v: vertex2int[v], e.V), self.E)
         buf = []
         for e in edges:
             buf.append('{'+', '.join(e) + '}')
@@ -221,7 +234,7 @@ class HyperGraph(object):
         s = ''
         for en, e in sorted(self.edge_dict.items()):
             s += edge_style + en + _reset + '('
-            s += ','.join(map(color_vertex, e))
+            s += ','.join(map(color_vertex, e.V))
             s += ')\n'
         return s
 
