@@ -4,6 +4,7 @@ from hypergraph import HyperGraph
 from functools import partial
 from ctdcheck import Block
 from ctdcheck import VertSet
+import sys
 
 
 def all_choose_k(S, k):
@@ -41,7 +42,9 @@ def bag_to_blocksConnected(h,B):
         tempBlock = Block(VertSet(B),VertSet(C))
         if tempBlock.connected(h):
             blocks.append(tempBlock)
-    blocks.append(Block(VertSet(B),VertSet(set())))  # adding trivial block too
+    tmp = Block(VertSet(B),VertSet(set()))
+    if tmp.connected(h):
+        blocks.append(tmp)  # adding trivial block too
     return blocks
 
 
@@ -66,11 +69,16 @@ def computesoftkBlocksConnected(h, k):
 
 
 
-h = HyperGraph.fromHyperbench("/home/okulmus/Documents/OldBenchmarks/benchmark/hyperbench/1.dtl")
+# h = HyperGraph.fromHyperbench("/home/okulmus/Documents/OldBenchmarks/benchmark/hyperbench/1.dtl")
+h = HyperGraph.fromHyperbench(sys.argv[1])
+
+
+
 
 ctd = CTDCheck(h)
 
-blocks = computesoftkBlocksConnected(h,2)
+# blocks = computesoftkBlocksConnected(h,2)
+blocks = computesoftkBlocksConnected(h,int(sys.argv[2]))
 
 for b in blocks:
     print("Adding blocks ", b)
@@ -88,3 +96,7 @@ print("Running hasDecomp")
 res = ctd.hasDecomp()
 
 print("hasDecomp done. Result: ",res)
+
+decomp = ctd.getDecompRoot()
+
+print("Found decomposition \n", decomp)
