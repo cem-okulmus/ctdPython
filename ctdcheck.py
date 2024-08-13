@@ -199,7 +199,7 @@ class CTDCheck(object):
             return Node(block.head,self.head_to_cover[block.head],list()) # leaf node
         basis = self.block_to_basis[block]
         allBlocks = self.head_to_blocks[basis]
-        blocks = [x for x in allBlocks if x < block]
+        blocks = [x for x in allBlocks if x < block and len(x.tail.vertices) != 0]
 
         # print("Child BLocks for block ", block)
         # for bs in allBlocks:
