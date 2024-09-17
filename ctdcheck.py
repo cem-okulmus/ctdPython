@@ -139,7 +139,8 @@ class Node:
         return True
 
 
-
+    def isCorrect(self,H):
+        return self.isConnected(H) and self.allEdgesCovered(H) and self.coverCheck()
 
 
     def toString(self,depth):

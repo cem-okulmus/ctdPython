@@ -127,9 +127,4 @@ decomp = ctd.getDecompRoot()
 print("Found decomposition \n", decomp)
 
 
-print("Connectedness check \n", decomp.isConnected(h))
-
-print("All Edges covered check \n", decomp.allEdgesCovered(h))
-
-
-print("All Covers correct \n", decomp.coverCheck())
+print("Decomp correct: "  + str(decomp.isCorrect(h)) )
