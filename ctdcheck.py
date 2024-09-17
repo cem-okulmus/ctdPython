@@ -1,3 +1,5 @@
+import networkx as nx
+
 class VertSet(object):
     def __init__(self,vertices):
         assert(type(vertices) == set)
@@ -62,6 +64,82 @@ class Node:
 
     def addChild(self,child):
         self.children.append(child)
+
+    def getGraphRoot(self,vertex):
+        return self.getGraph(vertex,"0") #not sure if this derefecne works
+
+    def getGraph(self,vertex,prefix): 
+        G = nx.Graph() 
+
+        # add new edges
+        if (vertex is  None) or (vertex in self.bag.vertices):
+            G.add_node(prefix)
+            for i, c in enumerate(self.children): 
+                if (vertex is None) or (vertex in c.bag.vertices):
+                    nodeName = prefix + str(i)
+                    G.add_edge(prefix,nodeName)
+
+        #collect edges from children
+        for i, c in enumerate(self.children): 
+            subG = c.getGraph(vertex,prefix + str(i))
+            for (s,e) in subG.edges:
+                G.add_edge(s,e)
+
+        return G
+
+    def coverCheck(self):
+        verticesCover = set()
+
+        for e in self.cover:
+            for v in e.V:
+                verticesCover.add(v)
+
+        if not(self.bag.vertices <= verticesCover):
+            print(" bag "  + str(self.bag)  + " not covered by cover " + str(self.cover))
+
+            print(" bag "  + str(self.bag.vertices)  )
+            print(" cover "  + str(verticesCover)  )
+            return False
+
+        for c in self.children: 
+            if not(c.coverCheck()):
+                return False
+
+        return True
+
+
+    def edgeCovered(self,e):
+        if (e.V <= self.bag.vertices):
+            return True
+        for c in self.children:
+            if c.edgeCovered(e):
+                return True
+       
+        return False
+
+    def allEdgesCovered(self,H):
+        for e in H.E:
+            if not(self.edgeCovered(e)):
+                print("The edge " + str(e) + " is not covered!")
+                return False
+
+        return True
+
+    def isConnected(self,H):
+
+        for n in H.V:
+            subG = self.getGraphRoot(n)
+            comps = nx.connected_components(subG)
+            if len(list(comps)) > 1:
+                print("subtree on vertex " + str(n)  + " is not connected")
+                print("comps: ", list(comps))
+                return False
+
+
+        return True
+
+
+
 
 
     def toString(self,depth):
