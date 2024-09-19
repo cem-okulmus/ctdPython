@@ -72,10 +72,10 @@ class Node:
         G = nx.Graph() 
 
         # add new edges
-        if (vertex is  None) or (vertex in self.bag.vertices):
+        if (vertex in self.bag.vertices):
             G.add_node(prefix)
             for i, c in enumerate(self.children): 
-                if (vertex is None) or (vertex in c.bag.vertices):
+                if (vertex in c.bag.vertices):
                     nodeName = prefix + str(i)
                     G.add_edge(prefix,nodeName)
 
