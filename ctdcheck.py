@@ -118,14 +118,16 @@ class Node:
         return False
 
     def allEdgesCovered(self,H):
+        result = True 
         for e in H.E:
             if not(self.edgeCovered(e)):
                 print("The edge " + str(e) + " is not covered!")
-                return False
+                result = False
 
-        return True
+        return result
 
     def isConnected(self,H):
+        result = True
 
         for n in H.V:
             subG = self.getGraphRoot(n)
@@ -133,10 +135,9 @@ class Node:
             if len(list(comps)) > 1:
                 print("subtree on vertex " + str(n)  + " is not connected")
                 print("comps: ", list(comps))
-                return False
+                result = False
 
-
-        return True
+        return result
 
 
     def isCorrect(self,H):
