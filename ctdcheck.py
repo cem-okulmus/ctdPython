@@ -1,5 +1,7 @@
 import networkx as nx
 
+from hypergraph import HyperGraph
+
 class VertSet(object):
     def __init__(self,vertices):
         assert(type(vertices) == set)
@@ -48,9 +50,16 @@ class Block(object):
         return selfVert.issubset(otherVert) and self.tail.vertices.issubset(other.tail.vertices)
 
     # connected bags filters out any bags for which the induced subgraph over E is not connected
-    def connected(self,H):
-        induced = H.vertex_induced_subg(self.head.vertices)
-        comps = induced.separate(set())
+    def connected(self):
+        coverGraph = HyperGraph()
+
+        for e in self.cover: 
+            coverGraph.add_edge(e.V,e.name)
+            
+        comps = coverGraph.separate(set())
+        # if len(comps) == 1: 
+        #     print("For the block " + str(self)  + " with cover "+ str(self.cover)+ " there are these components " + str(comps) )
+      
         return len(comps) == 1 # connected if only one connected comp
 
 

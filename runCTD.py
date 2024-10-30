@@ -22,7 +22,7 @@ def computesoftk(h, k):
     softk = list()
     for P in all_lambdas(h.E,k):
         obj1 = set()
-        if len(P) == 1:
+        if len(P) == 1:   # this case is just a special case of the general one. Delete?
             obj1 = P[0].V
         elif len(P) > 1:
             obj1 =functools.reduce(lambda a,b: (a).union(b),map(lambda s : s.V,P))
@@ -44,24 +44,33 @@ def bag_to_blocks(h,pair):
     L = pair[1]  
     blocks = list()
     for C in h.separate(B, only_vertices=True):
-        blocks.append(Block(VertSet(B),VertSet(C)))
+        blocks.append(Block(VertSet(B),L,VertSet(C)))
     blocks.append(Block(VertSet(B),L,VertSet(set())))  # adding trivial block too
     return blocks
 
 
-# computes the blocks of a bag by computing its components w.r.t. h
-def bag_to_blocksConnected(h,pair):
-    B = pair[0]
-    L = pair[1]  
-    blocks = list()
-    for C in h.separate(B, only_vertices=True):
-        tempBlock = Block(VertSet(B),L,VertSet(C))
-        if tempBlock.connected(h):
-            blocks.append(tempBlock)
-    tmp = Block(VertSet(B),L,VertSet(set()))
-    if tmp.connected(h):
-        blocks.append(tmp)  # adding trivial block too
-    return blocks
+
+# connected lambda a,h : a.connected(h)
+def bag_to_blocks_constraint(h,constraint, pair): 
+    # print("pair: ", pair)
+    blocksPrefilter = bag_to_blocks(h,pair)
+    return filter(constraint,blocksPrefilter)
+    # return blocksPrefilter
+
+
+# # computes the blocks of a bag by computing its components w.r.t. h
+# def bag_to_blocksConnected(h,pair):
+#     B = pair[0]
+#     L = pair[1]  
+#     blocks = list()
+#     for C in h.separate(B, only_vertices=True):
+#         tempBlock = Block(VertSet(B),L,VertSet(C))
+#         if tempBlock.connected(h):
+#             blocks.append(tempBlock)
+#     tmp = Block(VertSet(B),L,VertSet(set()))
+#     if tmp.connected(h):
+#         blocks.append(tmp)  # adding trivial block too
+#     return blocks
 
 
 # Same as  computeosftK, but returns directly the blocks
@@ -74,14 +83,25 @@ def computesoftkBlocks(h, k):
     return out
 
 
+
 # Same as  computeosftK, but returns directly the blocks
-def computesoftkBlocksConnected(h, k):
+def computesoftkBlocksConstraint(h, k,constraint):
     out = list()
-    listOfLists = map(partial(bag_to_blocksConnected,h),computesoftk(h,k))
+    listOfLists = map(partial(bag_to_blocks_constraint,h,constraint),computesoftk(h,k))
     for ll in listOfLists:
         for l in ll:
             out.append(l)
     return out
+
+
+# # Same as  computeosftK, but returns directly the blocks
+# def computesoftkBlocksConnected(h, k):
+#     out = list()
+#     listOfLists = map(partial(bag_to_blocksConnected,h),computesoftk(h,k))
+#     for ll in listOfLists:
+#         for l in ll:
+#             out.append(l)
+#     return out
 
 
 
@@ -103,7 +123,8 @@ h = HyperGraph.fromHyperbench(sys.argv[1])
 ctd = CTDCheck(h)
 
 # blocks = computesoftkBlocksConnected(h,2)
-blocks = computesoftkBlocksConnected(h,int(sys.argv[2]))
+# blocks = computesoftkBlocksConnected(h,int(sys.argv[2]))
+blocks = computesoftkBlocksConstraint(h,int(sys.argv[2]), lambda b: b.connected())
 
 for b in blocks:
     # print("Adding blocks ", b)
@@ -124,7 +145,6 @@ print("hasDecomp done. Result: ",res)
 
 decomp = ctd.getDecompRoot()
 
-print("Found decomposition \n", decomp)
-
-
-print("Decomp correct: "  + str(decomp.isCorrect(h)) )
+if decomp is not None:
+    print("Found decomposition \n", decomp)
+    print("Decomp correct: "  + str(decomp.isCorrect(h)) )
