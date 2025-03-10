@@ -26,7 +26,11 @@ def computesoftk(h, k):
             obj1 = P[0].V
         elif len(P) > 1:
             obj1 =functools.reduce(lambda a,b: (a).union(b),map(lambda s : s.V,P))
-        for C in h.separate(obj1, only_vertices=True):
+
+        vcomps = h.separate(obj1, only_vertices=False)
+        ecomps = [H.V for H in vcomps]
+            
+        for C in ecomps:
             for L in all_lambdas(h.E, k):
                 obj2 = set()
                 if len(L) == 1:
@@ -34,6 +38,7 @@ def computesoftk(h, k):
                 elif len(L) > 1:
                     obj2 = functools.reduce(lambda a,b: (a).union(b),map(lambda s : s.V,L))
                 B = set.intersection(C, obj2)
+                #print(list(sorted(obj1)), list(sorted(obj2)), list(sorted(B)), list(sorted(C)))
                 if len(B) > 1 and B not in softk:
                     softk.append((B,L))
     return softk
